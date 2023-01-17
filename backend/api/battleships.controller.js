@@ -16,7 +16,7 @@ export default class battleShipController {
     for (let col_index = 0; col_index < boardSize; col_index++) {
       let row = [];
       for (let row_index = 0; row_index < boardSize; row_index++) {
-        row.push(0);
+        row.push({ class: "box-clear" });
       }
       displayBoard.push(row);
     }
@@ -57,7 +57,10 @@ export default class battleShipController {
       if (game.gameBoard?.[coordinates.x]?.[coordinates.y] === 1) {
         game.destroyedTiles += 1;
         if (game.destroyedTiles >= 24) {
-          game.gameState = "game won";
+          game.gameState = "Won";
+          delete GAMES_IN_MEMORY[
+            GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
+          ];
         }
         let response = {
           shotState: "hit",
@@ -69,7 +72,10 @@ export default class battleShipController {
       } else {
         game.leftMoves -= 1;
         if (game.leftMoves <= 0) {
-          game.gameState = "game lost";
+          game.gameState = "Lost";
+          delete GAMES_IN_MEMORY[
+            GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
+          ];
         }
         let response = {
           shotState: "miss",

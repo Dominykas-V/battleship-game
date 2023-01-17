@@ -1,0 +1,129 @@
+body {
+  background: #add8e6;
+  max-width: 99%;
+  background-image: url("./../public/background.svg");
+}
+.row > * {
+  padding-right: 3px !important;
+  padding-left: 3px !important;
+  padding-top: 6px !important;
+}
+
+.container {
+  max-width: 1000px !important;
+}
+
+/* --SQ-- */
+[class*="box-"] {
+  /* width: 100%; */
+  height: 75px;
+}
+
+.box-clear {
+  background: #fff;
+  cursor: pointer;
+}
+
+.box-clear:hover {
+  background: rgb(230, 230, 230);
+  transition: 200ms;
+}
+
+.box-hit {
+  background: rgba(255, 38, 38, 0.688);
+  border: 1px dashed rgb(230, 230, 230);
+  cursor: not-allowed;
+}
+
+.box-missed {
+  background: rgb(194, 193, 193);
+  border: 1px dashed rgb(156, 156, 156);
+  cursor: not-allowed;
+}
+
+/* --LEGEND-- */
+[class*="board-legend-"] {
+  font-size: 30px;
+}
+
+.board-legend-letter {
+  text-align: center;
+}
+
+.board-legend-number {
+  text-align: right;
+  padding-top: 20px !important;
+  padding-right: 16px !important;
+}
+
+/* --NEW GAME BUTTON-- */
+.new_game_btn {
+  border: none;
+  background: none;
+}
+
+.new_game_btn span {
+  padding-bottom: 7px;
+  letter-spacing: 4px;
+  font-size: 14px;
+  padding-right: 15px;
+  text-transform: uppercase;
+}
+
+.new_game_btn svg {
+  transform: translateX(-8px);
+  transition: all 0.3s ease;
+}
+
+.new_game_btn:hover svg {
+  transform: translateX(0);
+}
+
+.new_game_btn:active svg {
+  transform: scale(0.9);
+}
+
+.hover-underline-animation {
+  position: relative;
+  color: black;
+  padding-bottom: 20px;
+}
+
+.hover-underline-animation:after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #000000;
+  transform-origin: bottom right;
+  transition: transform 0.25s ease-out;
+}
+
+.new_game_btn:hover .hover-underline-animation:after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+/* --GAME BLOCKER | IMG */
+[class*="game_blocker-"] {
+  background-color: transparent;
+  width: 60%;
+  height: 100%;
+  position: absolute;
+  top: 50%;
+  left: 66%;
+  -webkit-transform: translateY(-50%) translateX(-50%);
+  background-repeat: no-repeat;
+  background-position: center;
+  /* border: 2px solid red; */
+}
+.game_blocker-winner {
+  background-image: url("./../public/Winner.svg");
+  background-size: 70%;
+}
+.game_blocker-loser {
+  background-image: url("./../public/Loser.svg");
+  background-size: 60%;
+}
