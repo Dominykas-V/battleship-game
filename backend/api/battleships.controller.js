@@ -58,9 +58,9 @@ export default class battleShipController {
         game.destroyedTiles += 1;
         if (game.destroyedTiles >= 24) {
           game.gameState = "Won";
-          delete GAMES_IN_MEMORY[
-            GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
-          ];
+          // delete GAMES_IN_MEMORY[
+          //   GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
+          // ];
         }
         let response = {
           shotState: "hit",
@@ -73,9 +73,9 @@ export default class battleShipController {
         game.leftMoves -= 1;
         if (game.leftMoves <= 0) {
           game.gameState = "Lost";
-          delete GAMES_IN_MEMORY[
-            GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
-          ];
+          // delete GAMES_IN_MEMORY[
+          //   GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
+          // ];
         }
         let response = {
           shotState: "miss",
