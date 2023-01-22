@@ -86,6 +86,8 @@ function App() {
                       ? "You lost. Try again?"
                       : gameData.gameState === "Win"
                       ? "You Won! Try to beat it again!"
+                      : gameData.gameState === "Game not found."
+                      ? "404: Game not found."
                       : null}
                   </span>
                 </div>
@@ -118,6 +120,8 @@ function App() {
                   ? "game_blocker-loser"
                   : gameData.gameState === "Won"
                   ? "game_blocker-winner"
+                  : gameData.gameState === "Game not found."
+                  ? "game_blocker-404"
                   : null
               }
             ></div>

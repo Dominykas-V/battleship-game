@@ -1,7 +1,7 @@
 body {
   background: #add8e6;
   max-width: 99%;
-  background-image: url("./../public/background.svg");
+  background-image: url("./../public/Background.svg");
 }
 .row > * {
   padding-right: 3px !important;
@@ -125,5 +125,9 @@ body {
 }
 .game_blocker-loser {
   background-image: url("./../public/Loser.svg");
+  background-size: 60%;
+}
+.game_blocker-404 {
+  background-image: url("./../public/404.svg");
   background-size: 60%;
 }
