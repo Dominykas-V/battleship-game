@@ -6,6 +6,7 @@ const router = express.Router();
 router.route("/").get((req, res) => res.json({ error: "Wrong api call.", res:res }));
 
 router.route("/new_game").get(battleShipCTRL.apiNewGame);
+router.route("/new_game/:gameId").get(battleShipCTRL.apiNewGame);
 router.route("/hit/:gameId/:coordinates/").get(battleShipCTRL.apiHitSquare);
 
 

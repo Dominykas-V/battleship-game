@@ -2,10 +2,18 @@ import crypto from "crypto";
 
 //---------------------------------------------
 var GAMES_IN_MEMORY = [];
+// ---Clean GAMES_IN_MEMORY every 5 mins of dead games.(dead game is when no input was made for 5mins)
+var CLEANUP_PROCESS = setInterval(() => {
+  GAMES_IN_MEMORY.forEach((game, i) => {
+    if (new Date().getTime() - game.lastMove > 1000 * 60 * 5) {
+      GAMES_IN_MEMORY.splice(i, 1);
+    }
+  });
+}, 18000);
 //---------------------------------------------------------------
 export default class battleShipController {
   static async apiNewGame(req, res, next) {
-    const gameId = crypto.randomBytes(20).toString("hex");
+    var gameId = undefined;
     const gameBoard = generateNewBoard();
     const boardSize = 10;
     const leftMoves = 25;
@@ -21,14 +29,34 @@ export default class battleShipController {
       displayBoard.push(row);
     }
 
-    //add game to memory
-    GAMES_IN_MEMORY.push({
-      gameId: gameId,
-      gameBoard: gameBoard,
-      destroyedTiles: destroyedTiles,
-      leftMoves: leftMoves,
-      gameState: "playing",
-    });
+    //gameId check | replace game or push new game to memory
+    gameId = req.params.gameId;
+    if (
+      GAMES_IN_MEMORY.findIndex((element) => element.gameId == gameId) != -1
+    ) {
+      //replace existing game data
+      GAMES_IN_MEMORY[
+        GAMES_IN_MEMORY.findIndex((element) => element.gameId == gameId)
+      ] = {
+        gameId: gameId,
+        gameBoard: gameBoard,
+        destroyedTiles: destroyedTiles,
+        leftMoves: leftMoves,
+        gameState: "playing",
+        lastMove: new Date().getTime(),
+      };
+    } else {
+      gameId = crypto.randomBytes(20).toString("hex");
+      //add game to memory
+      GAMES_IN_MEMORY.push({
+        gameId: gameId,
+        gameBoard: gameBoard,
+        destroyedTiles: destroyedTiles,
+        leftMoves: leftMoves,
+        gameState: "playing",
+        lastMove: new Date().getTime(),
+      });
+    }
 
     //response data
     let response = {
@@ -52,15 +80,13 @@ export default class battleShipController {
     let game = GAMES_IN_MEMORY.find(
       (element) => element.gameId === req.params.gameId
     );
+
     if (game !== undefined) {
       let coordinates = JSON.parse(req.params.coordinates);
       if (game.gameBoard?.[coordinates.x]?.[coordinates.y] === 1) {
         game.destroyedTiles += 1;
         if (game.destroyedTiles >= 24) {
           game.gameState = "Won";
-          // delete GAMES_IN_MEMORY[
-          //   GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
-          // ];
         }
         let response = {
           shotState: "hit",
@@ -73,9 +99,6 @@ export default class battleShipController {
         game.leftMoves -= 1;
         if (game.leftMoves <= 0) {
           game.gameState = "Lost";
-          // delete GAMES_IN_MEMORY[
-          //   GAMES_IN_MEMORY.findIndex((obj) => obj.gameId === req.params.gameId)
-          // ];
         }
         let response = {
           shotState: "miss",
@@ -87,7 +110,7 @@ export default class battleShipController {
       }
     } else {
       //send error response
-      res.json({ error: "Game not found." });
+      res.json({ gameState: "Game not found." });
     }
   }
 }

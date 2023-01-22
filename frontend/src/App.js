@@ -37,7 +37,7 @@ function App() {
   }
   // ---------------------------------
   function newGame() {
-    axios.get(`api/v1/battleships/new_game`).then((res) => {
+    axios.get(`api/v1/battleships/new_game/${gameData.gameId}`).then((res) => {
       setGameData(res.data);
     });
   }
