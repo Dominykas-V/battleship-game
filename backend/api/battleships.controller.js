@@ -24,7 +24,7 @@ export default class battleShipController {
     for (let col_index = 0; col_index < boardSize; col_index++) {
       let row = [];
       for (let row_index = 0; row_index < boardSize; row_index++) {
-        row.push({ class: "box-clear" });
+        row.push({ sqState: "sqClear" });
       }
       displayBoard.push(row);
     }
@@ -65,6 +65,7 @@ export default class battleShipController {
       destroyedTiles: destroyedTiles,
       leftMoves: leftMoves,
       gameState: "playing",
+      shipArea: [],
     };
     //send response
     res.json(response);
@@ -83,16 +84,35 @@ export default class battleShipController {
 
     if (game !== undefined) {
       let coordinates = JSON.parse(req.params.coordinates);
-      if (game.gameBoard?.[coordinates.x]?.[coordinates.y] === 1) {
+      if (game.gameBoard?.[coordinates.x]?.[coordinates.y]?.isShipHere) {
         game.destroyedTiles += 1;
         if (game.destroyedTiles >= 24) {
           game.gameState = "Won";
         }
+        //minus 1 from ship size. Ship size is located at ship front.
+        game.gameBoard[
+          game.gameBoard[coordinates.x][coordinates.y].shipFront.x
+        ][game.gameBoard[coordinates.x][coordinates.y].shipFront.y].shipSize =
+          game.gameBoard[
+            game.gameBoard[coordinates.x][coordinates.y].shipFront.x
+          ][game.gameBoard[coordinates.x][coordinates.y].shipFront.y].shipSize -
+          1;
+        //
         let response = {
           shotState: "hit",
           destroyedTiles: game.destroyedTiles,
           leftMoves: game.leftMoves,
           gameState: game.gameState,
+          shipArea:
+            game.gameBoard[
+              game.gameBoard[coordinates.x][coordinates.y].shipFront.x
+            ][game.gameBoard[coordinates.x][coordinates.y].shipFront.y]
+              .shipSize <= 0
+              ? game.gameBoard[
+                  game.gameBoard[coordinates.x][coordinates.y].shipFront.x
+                ][game.gameBoard[coordinates.x][coordinates.y].shipFront.y]
+                  .shipArea
+              : [],
         };
         res.json(response);
       } else {
@@ -105,6 +125,7 @@ export default class battleShipController {
           destroyedTiles: game.destroyedTiles,
           leftMoves: game.leftMoves,
           gameState: game.gameState,
+          shipArea: [],
         };
         res.json(response);
       }
@@ -121,11 +142,11 @@ function generateNewBoard() {
   const ships = [5, 4, 3, 3, 2, 2, 2, 1, 1, 1]; //ships sizes
 
   //generates empty board
-  let board = [];
+  var board = [];
   for (let col_index = 0; col_index < boardSize; col_index++) {
     let row = [];
     for (let row_index = 0; row_index < boardSize; row_index++) {
-      row.push(0);
+      row.push({ isShipHere: false });
     }
     board.push(row);
   }
@@ -142,6 +163,11 @@ function generateNewBoard() {
       // ship direction | N=0, E=1, S=2, W=3
       //N=top, E=right, S=down, W=left
       let shipDirection = Math.floor(Math.random() * 4);
+
+      // if generated ship head already has another ships head in it skip.
+      if (board[shipFront.x][shipFront.y].isShipHere) {
+        continue;
+      }
 
       //selects ship's back based on direction
       let shipBack = { x: -1, y: -1 };
@@ -164,26 +190,49 @@ function generateNewBoard() {
       ) {
         continue;
       }
-      //checks if ships are overlapping and if ship aria is clear
+      //checks if ships are overlapping and if ship aria is clear if its clear adds ship area to ship head.
+      //if not restarts search and removes .shipArea attribute.
       if (!isShipAreaClear(shipDirection, shipFront, shipSize, board)) {
+        delete board[shipFront.x][shipFront.y].shipArea;
         continue;
       }
 
       //place ship on board
       for (let i = 0; i < shipSize; i++) {
         if (shipSize === 1) {
-          board[shipFront.x][shipFront.y] = 1;
+          board[shipFront.x][shipFront.y].isShipHere = true;
+          board[shipFront.x][shipFront.y].shipFront = {
+            x: shipFront.x,
+            y: shipFront.y,
+          };
         } else if (shipDirection === 0) {
-          board[shipFront.x][shipFront.y - i] = 1;
+          board[shipFront.x][shipFront.y - i].isShipHere = true;
+          board[shipFront.x][shipFront.y - i].shipFront = {
+            x: shipFront.x,
+            y: shipFront.y,
+          };
         } else if (shipDirection === 1) {
-          board[shipFront.x + i][shipFront.y] = 1;
+          board[shipFront.x + i][shipFront.y].isShipHere = true;
+          board[shipFront.x + i][shipFront.y].shipFront = {
+            x: shipFront.x,
+            y: shipFront.y,
+          };
         } else if (shipDirection === 2) {
-          board[shipFront.x][shipFront.y + i] = 1;
+          board[shipFront.x][shipFront.y + i].isShipHere = true;
+          board[shipFront.x][shipFront.y + i].shipFront = {
+            x: shipFront.x,
+            y: shipFront.y,
+          };
         } else if (shipDirection === 3) {
-          board[shipFront.x - i][shipFront.y] = 1;
+          board[shipFront.x - i][shipFront.y].isShipHere = true;
+          board[shipFront.x - i][shipFront.y].shipFront = {
+            x: shipFront.x,
+            y: shipFront.y,
+          };
         }
       }
 
+      board[shipFront.x][shipFront.y].shipSize = shipSize;
       is_ship_placed = true;
     }
   });
@@ -193,85 +242,238 @@ function generateNewBoard() {
 }
 //---------------------------------------------------------------
 function isShipAreaClear(shipDirection, shipFront, shipSize, board) {
+  board[shipFront.x][shipFront.y].shipArea = [];
   if (shipDirection === 0) {
     for (let i = 0; i < shipSize; i++) {
       if (
-        board?.[shipFront.x - 1]?.[shipFront.y - i] === 1 ||
-        board?.[shipFront.x]?.[shipFront.y - i] === 1 ||
-        board?.[shipFront.x + 1]?.[shipFront.y - i] === 1
+        board?.[shipFront.x - 1]?.[shipFront.y - i]?.isShipHere ||
+        board?.[shipFront.x]?.[shipFront.y - i]?.isShipHere ||
+        board?.[shipFront.x + 1]?.[shipFront.y - i]?.isShipHere
       ) {
         return false;
+      } else {
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x - 1,
+          y: shipFront.y - i,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x,
+          y: shipFront.y - i,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x + 1,
+          y: shipFront.y - i,
+        });
       }
     }
     if (
-      board?.[shipFront.x - 1]?.[shipFront.y + 1] === 1 ||
-      board?.[shipFront.x]?.[shipFront.y + 1] === 1 ||
-      board?.[shipFront.x + 1]?.[shipFront.y + 1] === 1 ||
-      board?.[shipFront.x - 1]?.[shipFront.y - shipSize] === 1 ||
-      board?.[shipFront.x]?.[shipFront.y - shipSize] === 1 ||
-      board?.[shipFront.x + 1]?.[shipFront.y - shipSize] === 1
+      board?.[shipFront.x - 1]?.[shipFront.y + 1]?.isShipHere ||
+      board?.[shipFront.x]?.[shipFront.y + 1]?.isShipHere ||
+      board?.[shipFront.x + 1]?.[shipFront.y + 1]?.isShipHere ||
+      board?.[shipFront.x - 1]?.[shipFront.y - shipSize]?.isShipHere ||
+      board?.[shipFront.x]?.[shipFront.y - shipSize]?.isShipHere ||
+      board?.[shipFront.x + 1]?.[shipFront.y - shipSize]?.isShipHere
     ) {
       return false;
+    } else {
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y + 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x,
+        y: shipFront.y + 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y + 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y - shipSize,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x,
+        y: shipFront.y - shipSize,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y - shipSize,
+      });
     }
   } else if (shipDirection === 1) {
     for (let i = 0; i < shipSize; i++) {
       if (
-        board?.[shipFront.x + i]?.[shipFront.y - 1] === 1 ||
-        board?.[shipFront.x + i]?.[shipFront.y] === 1 ||
-        board?.[shipFront.x + i]?.[shipFront.y + 1] === 1
+        board?.[shipFront.x + i]?.[shipFront.y - 1]?.isShipHere ||
+        board?.[shipFront.x + i]?.[shipFront.y]?.isShipHere ||
+        board?.[shipFront.x + i]?.[shipFront.y + 1]?.isShipHere
       ) {
         return false;
+      } else {
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x + i,
+          y: shipFront.y - 1,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x + i,
+          y: shipFront.y,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x + i,
+          y: shipFront.y + 1,
+        });
       }
     }
     if (
-      board?.[shipFront.x - 1]?.[shipFront.y + 1] === 1 ||
-      board?.[shipFront.x - 1]?.[shipFront.y] === 1 ||
-      board?.[shipFront.x - 1]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x + shipSize]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x + shipSize]?.[shipFront.y] === 1 ||
-      board?.[shipFront.x + shipSize]?.[shipFront.y + 1] === 1
+      board?.[shipFront.x - 1]?.[shipFront.y + 1]?.isShipHere ||
+      board?.[shipFront.x - 1]?.[shipFront.y]?.isShipHere ||
+      board?.[shipFront.x - 1]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x + shipSize]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x + shipSize]?.[shipFront.y]?.isShipHere ||
+      board?.[shipFront.x + shipSize]?.[shipFront.y + 1]?.isShipHere
     ) {
       return false;
+    } else {
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y + 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + shipSize,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + shipSize,
+        y: shipFront.y,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + shipSize,
+        y: shipFront.y + 1,
+      });
     }
   } else if (shipDirection === 2) {
     for (let i = 0; i < shipSize; i++) {
       if (
-        board?.[shipFront.x - 1]?.[shipFront.y + i] === 1 ||
-        board?.[shipFront.x]?.[shipFront.y + i] === 1 ||
-        board?.[shipFront.x + 1]?.[shipFront.y + i] === 1
+        board?.[shipFront.x - 1]?.[shipFront.y + i]?.isShipHere ||
+        board?.[shipFront.x]?.[shipFront.y + i]?.isShipHere ||
+        board?.[shipFront.x + 1]?.[shipFront.y + i]?.isShipHere
       ) {
         return false;
+      } else {
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x - 1,
+          y: shipFront.y + i,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x,
+          y: shipFront.y + i,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x + 1,
+          y: shipFront.y + i,
+        });
       }
     }
     if (
-      board?.[shipFront.x - 1]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x + 1]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x - 1]?.[shipFront.y + shipSize] === 1 ||
-      board?.[shipFront.x]?.[shipFront.y + shipSize] === 1 ||
-      board?.[shipFront.x + 1]?.[shipFront.y + shipSize] === 1
+      board?.[shipFront.x - 1]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x + 1]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x - 1]?.[shipFront.y + shipSize]?.isShipHere ||
+      board?.[shipFront.x]?.[shipFront.y + shipSize]?.isShipHere ||
+      board?.[shipFront.x + 1]?.[shipFront.y + shipSize]?.isShipHere
     ) {
       return false;
+    } else {
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - 1,
+        y: shipFront.y + shipSize,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x,
+        y: shipFront.y + shipSize,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y + shipSize,
+      });
     }
   } else if (shipDirection === 3) {
     for (let i = 0; i < shipSize; i++) {
       if (
-        board?.[shipFront.x - i]?.[shipFront.y - 1] === 1 ||
-        board?.[shipFront.x - i]?.[shipFront.y] === 1 ||
-        board?.[shipFront.x - i]?.[shipFront.y + 1] === 1
+        board?.[shipFront.x - i]?.[shipFront.y - 1]?.isShipHere ||
+        board?.[shipFront.x - i]?.[shipFront.y]?.isShipHere ||
+        board?.[shipFront.x - i]?.[shipFront.y + 1]?.isShipHere
       ) {
         return false;
+      } else {
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x - i,
+          y: shipFront.y - 1,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x - i,
+          y: shipFront.y,
+        });
+        board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+          x: shipFront.x - i,
+          y: shipFront.y + 1,
+        });
       }
     }
     if (
-      board?.[shipFront.x + 1]?.[shipFront.y + 1] === 1 ||
-      board?.[shipFront.x + 1]?.[shipFront.y] === 1 ||
-      board?.[shipFront.x + 1]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x - shipSize]?.[shipFront.y - 1] === 1 ||
-      board?.[shipFront.x - shipSize]?.[shipFront.y] === 1 ||
-      board?.[shipFront.x - shipSize]?.[shipFront.y + 1] === 1
+      board?.[shipFront.x + 1]?.[shipFront.y + 1]?.isShipHere ||
+      board?.[shipFront.x + 1]?.[shipFront.y]?.isShipHere ||
+      board?.[shipFront.x + 1]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x - shipSize]?.[shipFront.y - 1]?.isShipHere ||
+      board?.[shipFront.x - shipSize]?.[shipFront.y]?.isShipHere ||
+      board?.[shipFront.x - shipSize]?.[shipFront.y + 1]?.isShipHere
     ) {
       return false;
+    } else {
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y + 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x + 1,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - shipSize,
+        y: shipFront.y - 1,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - shipSize,
+        y: shipFront.y,
+      });
+      board?.[shipFront.x]?.[shipFront.y]?.shipArea.push({
+        x: shipFront.x - shipSize,
+        y: shipFront.y + 1,
+      });
     }
   }
   return true;

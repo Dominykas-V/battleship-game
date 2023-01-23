@@ -17,21 +17,32 @@ function App() {
         `/api/v1/battleships/hit/${gameData.gameId}/{ "x":${coordinates.x},"y":${coordinates.y}}`
       )
       .then((res) => {
-        console.log(res.data);
-
+        console.log(res);
         let tempGameData = { ...gameData };
         tempGameData.leftMoves = res.data.leftMoves;
         tempGameData.destroyedTiles = res.data.destroyedTiles;
         tempGameData.gameState = res.data.gameState;
 
         if (res.data.shotState === "hit") {
-          tempGameData.gameBoard[coordinates.x][coordinates.y].class =
-            "box-hit";
+          tempGameData.gameBoard[coordinates.x][coordinates.y].sqState =
+            "sqHit";
         } else {
-          tempGameData.gameBoard[coordinates.x][coordinates.y].class =
-            "box-missed";
+          tempGameData.gameBoard[coordinates.x][coordinates.y].sqState =
+            "sqMissed";
         }
-
+        if (res.data.shipArea != []) {
+          res.data.shipArea.forEach((value) => {
+            if (value.x >= 0 && value.x < 10 && value.y >= 0 && value.y < 10) {
+              if (
+                tempGameData.gameBoard[value.x][value.y].sqState === "sqHit"
+              ) {
+                tempGameData.gameBoard[value.x][value.y].sqState = "sqSunken";
+              } else {
+                tempGameData.gameBoard[value.x][value.y].sqState = "sqMissed";
+              }
+            }
+          });
+        }
         setGameData(tempGameData);
       });
   }
@@ -176,12 +187,12 @@ function App() {
                                 className="col-sm-1"
                                 key={`${col_i}${row_i}`}
                                 onClick={() =>
-                                  row.class === "box-clear"
+                                  row.sqState === "sqClear"
                                     ? hitSquare({ x: col_i, y: row_i })
                                     : null
                                 }
                               >
-                                <div className={row.class}></div>
+                                <div className={row.sqState}></div>
                               </div>
                             </>
                           );
@@ -191,12 +202,12 @@ function App() {
                             className="col-sm-1"
                             key={`${col_i}${row_i}`}
                             onClick={() =>
-                              row.class === "box-clear"
+                              row.sqState === "sqClear"
                                 ? hitSquare({ x: col_i, y: row_i })
                                 : null
                             }
                           >
-                            <div className={row.class}></div>
+                            <div className={row.sqState}></div>
                           </div>
                         );
                       })}
