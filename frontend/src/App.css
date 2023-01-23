@@ -46,6 +46,11 @@ body {
   border: 1px dashed rgb(0, 0, 0);
   cursor: not-allowed;
 }
+.sqShowHiddenShip {
+  background: rgb(222, 205, 19);
+  border: 1px dashed rgb(0, 0, 0);
+  cursor: not-allowed;
+}
 
 /* --LEGEND-- */
 [class*="board-legend-"] {
@@ -125,6 +130,10 @@ body {
   background-position: center;
   /* border: 2px solid red; */
 }
+[class*="game_blocker-"]:hover {
+  opacity: 0.2;
+  transition: 250ms;
+}
 .game_blocker-winner {
   background-image: url("./../public/Winner.svg");
   background-size: 70%;
@@ -136,4 +145,5 @@ body {
 .game_blocker-404 {
   background-image: url("./../public/404.svg");
   background-size: 60%;
+  opacity: 1 !important;
 }

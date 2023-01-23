@@ -42,7 +42,7 @@ export default class battleShipController {
         gameBoard: gameBoard,
         destroyedTiles: destroyedTiles,
         leftMoves: leftMoves,
-        gameState: "playing",
+        gameState: "Playing",
         lastMove: new Date().getTime(),
       };
     } else {
@@ -53,7 +53,7 @@ export default class battleShipController {
         gameBoard: gameBoard,
         destroyedTiles: destroyedTiles,
         leftMoves: leftMoves,
-        gameState: "playing",
+        gameState: "Playing",
         lastMove: new Date().getTime(),
       });
     }
@@ -64,7 +64,7 @@ export default class battleShipController {
       gameBoard: displayBoard,
       destroyedTiles: destroyedTiles,
       leftMoves: leftMoves,
-      gameState: "playing",
+      gameState: "Playing",
       shipArea: [],
     };
     //send response
@@ -126,6 +126,7 @@ export default class battleShipController {
           leftMoves: game.leftMoves,
           gameState: game.gameState,
           shipArea: [],
+          missedShips: game.gameState === "Lost" ? game.gameBoard : [],
         };
         res.json(response);
       }
