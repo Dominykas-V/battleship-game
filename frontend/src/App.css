@@ -1,7 +1,7 @@
 body {
   background: #add8e6;
   max-width: 99%;
-  background-image: url("./../public/Background.svg");
+  background-image: url("./../public/background.svg");
 }
 .row > * {
   padding-right: 3px !important;
